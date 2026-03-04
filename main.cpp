@@ -1,15 +1,64 @@
-#include "objects/tree.h"
-#include "objects/blob.h"
+#include "commands/init.h"
+#include "commands/add.h"
+#include "commands/commit.h"
+#include "repo/repository.h"
+
 #include <iostream>
+#include <unordered_map>
+#include <functional>
 
-int main() {
-    Blob b("hello");
-    std::string blob_sha = b.store();
+int main(int argc, char* argv[])
+{
+    if (argc < 2)
+    {
+        std::cout << "Usage: mgit <command>\n";
+        return 1;
+    }
 
-    Tree t;
-    t.add_entry("file.txt", blob_sha, 100644);
+    std::string command = argv[1];
 
-    std::string tree_sha = t.store();
+    std::unordered_map<std::string, std::function<void()>> commands;
 
-    std::cout << "Tree SHA: " << tree_sha << "\n";
+    commands["init"] = []() {
+        init_repo();
+    };
+
+    commands["add"] = [&]() {
+        if (!is_repo())
+        {
+            std::cout << "Not an mgit repository\n";
+            return;
+        }
+
+        if (argc < 3)
+        {
+            std::cout << "Specify file or folder\n";
+            return;
+        }
+
+        add_file(argv[2]);
+    };
+
+    commands["commit"] = [&]() {
+        if (!is_repo())
+        {
+            std::cout << "Not an mgit repository\n";
+            return;
+        }
+
+        if (argc < 3)
+        {
+            std::cout << "Specify commit message\n";
+            return;
+        }
+
+        commit(argv[2]);
+    };
+
+    if (commands.count(command))
+        commands[command]();
+    else
+        std::cout << "Unknown command\n";
+
+    return 0;
 }
