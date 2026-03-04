@@ -5,27 +5,33 @@
 #include "../objects/object_store.h"
 #include "../hashing/sha1.h"
 
-#include<map>
-#include<iostream>
 #include <fstream>
-#include <chrono>
+#include <map>
+#include <iostream>
 
-static std::string build_tree(const std::map<std::string,std::string>& entries)
-{
+static std::string get_parent_commit(){
+    std::ifstream head(".mgit/HEAD");
+
+    if (!head)
+        return "";
+
+    std::string parent;
+    head >> parent;
+
+    return parent;
+}
+
+static std::string build_tree(const std::map<std::string,std::string>& entries){
     Tree tree;
 
     std::map<std::string, std::map<std::string,std::string>> subdirs;
 
-    for (auto& [path, sha] : entries)
-    {
+    for (const auto& [path, sha] : entries){
         auto pos = path.find('/');
 
-        if (pos == std::string::npos)
-        {
+        if (pos == std::string::npos){
             tree.add_entry(path, sha, 100644);
-        }
-        else
-        {
+        }else{
             std::string dir = path.substr(0, pos);
             std::string rest = path.substr(pos + 1);
 
@@ -33,8 +39,7 @@ static std::string build_tree(const std::map<std::string,std::string>& entries)
         }
     }
 
-    for (auto& [dir, files] : subdirs)
-    {
+    for (const auto& [dir, files] : subdirs){
         std::string subtree_sha = build_tree(files);
         tree.add_entry(dir, subtree_sha, 40000);
     }
@@ -42,24 +47,25 @@ static std::string build_tree(const std::map<std::string,std::string>& entries)
     return tree.store();
 }
 
-void commit(const std::string& message)
-{
+void commit(const std::string& message){
     Index index;
     index.load();
 
     auto entries = index.get_entries();
 
-    if (entries.empty())
-    {
+    if (entries.empty()){
         std::cout << "Nothing to commit\n";
         return;
     }
 
     std::map<std::string,std::string> ordered(entries.begin(), entries.end());
-
     std::string tree_sha = build_tree(ordered);
-
+    std::string parent = get_parent_commit();
     std::string content = "tree " + tree_sha + "\n";
+
+    if (!parent.empty())
+        content += "parent " + parent + "\n";
+
     content += "message " + message + "\n";
 
     std::string serialized = "commit ";

@@ -28,19 +28,15 @@ void add_file(const std::string& path)
     Index index;
     index.load();
 
-    if (fs::is_regular_file(path))
-    {
+    if (fs::is_regular_file(path)){
         std::string content = read_file(path);
 
         Blob blob(content);
         std::string sha = blob.store();
 
         index.add(path, sha);
-    }
-    else if (fs::is_directory(path))
-    {
-        for (auto& entry : fs::recursive_directory_iterator(path))
-        {
+    }else if (fs::is_directory(path)){
+        for (auto& entry : fs::recursive_directory_iterator(path)){
             if (!fs::is_regular_file(entry))
                 continue;
 
