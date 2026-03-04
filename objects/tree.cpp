@@ -33,6 +33,7 @@ std::string Tree::serialize() const {
     std::string header = "tree ";
     header += std::to_string(body.size());
     header += '\0';
+    header += '\n';
 
     return header + body;
 }
