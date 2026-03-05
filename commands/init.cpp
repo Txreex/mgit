@@ -6,10 +6,8 @@
 
 namespace fs = std::filesystem;
 
-void init_repo()
-{
-    if (fs::exists(".mgit"))
-    {
+void init_repo(){
+    if (fs::exists(".mgit")){
         std::cout << "Repository already exists\n";
         return;
     }
